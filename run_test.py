@@ -2,6 +2,7 @@ import logging
 import unittest
 
 # ADding comment to check branching and testing
+# Main -> Master
 from test.login import LoginHandlerTest
 from test.logout import LogoutHandlerTest
 from test.registration import RegistrationHandlerTest
