@@ -2,6 +2,7 @@ import os
 from typing import cast
 
 import keyring
+from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 # For password hashing, using Scrypt with the following values:
@@ -32,4 +33,24 @@ def passphrase_hashing(
     return derived_passphrase.hex()
 
 
-def password_verification(): ...
+def passphrase_verification(
+    password: str,
+    hashed_passphrase: str,
+    salt: bytes,
+    derivation_params: dict[str, int],
+) -> bool:
+    key_derivation_function: Scrypt = Scrypt(
+        salt=salt,
+        length=derivation_params["length"],
+        n=derivation_params["N"],
+        r=derivation_params["r"],
+        p=derivation_params["p"],
+    )
+
+    try:
+        key_derivation_function.verify(
+            password.encode() + PEPPER.encode(), bytes.fromhex(hashed_passphrase)
+        )
+        return True
+    except InvalidKey:
+        return False
