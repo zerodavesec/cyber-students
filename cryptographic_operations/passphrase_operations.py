@@ -1,6 +1,3 @@
-import os
-from typing import cast
-
 import keyring
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
