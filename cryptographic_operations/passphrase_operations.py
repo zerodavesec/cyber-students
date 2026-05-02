@@ -33,11 +33,7 @@ def passphrase_hashing(
         p=derivation_params["p"],
     )
     derived_passphrase: bytes = key_derivation_function.derive(
-        # FIX: PEPPER.encode() to bytes.fromhex(PEPPER) -> MISTAKE
-        # the pepper is initialised and saved as a hex string in keyring
-        # when encoding with .encode(), 64 bytes of ASCII are passed to the derive function
-        # instead of the 32 original bytes.
-        passphrase.encode() + PEPPER.encode()
+        passphrase.encode() + bytes.fromhex(PEPPER)
     )
     return derived_passphrase.hex()
 
@@ -58,7 +54,7 @@ def passphrase_verification(
 
     try:
         key_derivation_function.verify(
-            password.encode() + PEPPER.encode(), bytes.fromhex(hashed_passphrase)
+            password.encode() + bytes.fromhex(PEPPER), bytes.fromhex(hashed_passphrase)
         )
         return True
     except InvalidKey:
