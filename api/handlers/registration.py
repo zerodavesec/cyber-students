@@ -55,7 +55,7 @@ class RegistrationHandler(BaseHandler):
             self.send_error(400, message="The display name is invalid!")
             return
 
-        user = await self.db.users.find_one({"email": email})
+        user = await self.db.users.find_one({"key_hashed_email": hmac_email})
 
         if user is not None:
             self.send_error(
