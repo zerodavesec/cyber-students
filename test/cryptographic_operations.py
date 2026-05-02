@@ -11,6 +11,7 @@ from cryptographic_operations.passphrase_operations import (
 from cryptographic_operations.personal_details_operations import (
     decrypt_cyphertext,
     encrypt_plaintext,
+    keyed_hashing,
 )
 from cryptographic_operations.token_operations import sha256_string_hashing
 
@@ -119,3 +120,33 @@ class CrytographicOperationsTesting(TestCase):
         ciphertext: bytes = nonce_and_ciphertext[16:]
 
         self.assertEqual(len(ciphertext), len(email.encode()))
+
+    # KEYED HASHING Tests
+    def test_keyed_hashing_produces_same_output_with_same_input(self):
+        email: str = "david@zerodave.com"
+
+        hash_1: str = keyed_hashing(email)
+        hash_2: str = keyed_hashing(email)
+
+        self.assertEqual(hash_1, hash_2)
+
+    def test_keyed_hashing_different_input_different_output(self):
+        email_1: str = "david@zerodave.com"
+        email_2: str = "martin@test.com"
+
+        hash_1: str = keyed_hashing(email_1)
+        hash_2: str = keyed_hashing(email_2)
+
+        self.assertNotEqual(hash_1, hash_2)
+
+    def test_keyed_hashing_returns_sha_256_length(self):
+        email: str = "david@zerodave.com"
+        hash: str = keyed_hashing(email)
+
+        self.assertEqual(len(hash), 64)
+
+    def test_keyed_hashing_returns_hexadecimal_string(self):
+        email: str = "david@zerodave.com"
+        hash: str = keyed_hashing(email)
+
+        self.assertTrue(all(character in "0123456789abcdef" for character in hash))
