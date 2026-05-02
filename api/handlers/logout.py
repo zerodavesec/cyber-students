@@ -1,18 +1,19 @@
 from tornado.web import authenticated
 
+from cryptographic_operations.personal_details_operations import keyed_hashing
+
 from .auth import AuthHandler
 
-class LogoutHandler(AuthHandler):
 
+class LogoutHandler(AuthHandler):
     @authenticated
     async def post(self):
-        await self.db.users.update_one({
-            'email': self.current_user['email'],
-        }, {
-            '$set': {
-                'token': None
-            }
-        })
+        await self.db.users.update_one(
+            {
+                "key_hashed_email": keyed_hashing(self.current_user["email"]),
+            },
+            {"$set": {"token": None}},
+        )
 
         self.current_user = None
 

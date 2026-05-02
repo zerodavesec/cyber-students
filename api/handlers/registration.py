@@ -6,6 +6,10 @@ from cryptographic_operations.passphrase_operations import (
     SCRYPT_DERIVATION_PARAMS,
     passphrase_hashing,
 )
+from cryptographic_operations.personal_details_operations import (
+    encrypt_plaintext,
+    keyed_hashing,
+)
 
 from .base import BaseHandler
 
@@ -16,6 +20,9 @@ class RegistrationHandler(BaseHandler):
             body = json_decode(self.request.body)
             email = body["email"].lower().strip()
 
+            hmac_email: str = keyed_hashing(email)
+            encrypted_email: str = encrypt_plaintext(email).hex()
+
             salt = os.urandom(32)
             password = passphrase_hashing(
                 passphrase=body["password"],
@@ -24,6 +31,7 @@ class RegistrationHandler(BaseHandler):
             )
 
             display_name = body.get("displayName")
+            encrypted_display_name: str = encrypt_plaintext(display_name).hex()
             if display_name is None:
                 display_name = email
             if not isinstance(display_name, str):
@@ -47,7 +55,7 @@ class RegistrationHandler(BaseHandler):
             self.send_error(400, message="The display name is invalid!")
             return
 
-        user = await self.db.users.find_one({"email": email})
+        user = await self.db.users.find_one({"key_hashed_email": hmac_email})
 
         if user is not None:
             self.send_error(
@@ -57,9 +65,10 @@ class RegistrationHandler(BaseHandler):
 
         await self.db.users.insert_one(
             {
-                "email": email,
+                "key_hashed_email": hmac_email,
+                "email": encrypted_email,
+                "displayName": encrypted_display_name,
                 "password": password,
-                "displayName": display_name,
                 "salt": salt.hex(),
             }
         )

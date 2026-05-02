@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from cryptographic_operations.personal_details_operations import decrypt_cyphertext
 from cryptographic_operations.token_operations import sha256_string_hashing
 
 from .base import BaseHandler
@@ -23,7 +24,8 @@ class AuthHandler(BaseHandler):
 
         hashed_token: str = sha256_string_hashing(token)
         user = await self.db.users.find_one(
-            {"token": hashed_token}, {"email": 1, "displayName": 1, "expiresIn": 1}
+            {"token": hashed_token},
+            {"email": 1, "displayName": 1, "expiresIn": 1},
         )
 
         if user is None:
@@ -37,7 +39,10 @@ class AuthHandler(BaseHandler):
             self.send_error(403, message="Your token has expired!")
             return
 
+        # user contains data directly from database (encrypted), must be decrypted
+        # before printing. This data goes to user.py to be printed.
+        # Decision is to decrypt it here instead of in user.py.
         self.current_user = {
-            "email": user["email"],
-            "display_name": user["displayName"],
+            "email": decrypt_cyphertext(bytes.fromhex(user["email"])),
+            "display_name": decrypt_cyphertext(bytes.fromhex(user["displayName"])),
         }

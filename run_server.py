@@ -7,6 +7,10 @@ from tornado.ioloop import IOLoop
 
 from api.app import Application
 from api.conf import PORT
+from cryptographic_operations.personal_details_operations import (
+    initialise_aes_key,
+    initialise_hmac_key,
+)
 
 
 def initialise_pepper() -> None:
@@ -19,6 +23,8 @@ def main():
     basicConfig(level=INFO)
 
     initialise_pepper()
+    initialise_aes_key()
+    initialise_hmac_key()
 
     http_server = HTTPServer(Application())
     http_server.listen(PORT)
