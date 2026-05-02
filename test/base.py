@@ -1,14 +1,27 @@
 from concurrent.futures import ThreadPoolExecutor
+
 from mongomock_motor import AsyncMongoMockClient
 from tornado.ioloop import IOLoop
 from tornado.testing import AsyncHTTPTestCase
 
+from cryptographic_operations.passphrase_operations import initialise_pepper
+from cryptographic_operations.personal_details_operations import (
+    initialise_aes_key,
+    initialise_hmac_key,
+)
+
 from .conf import MONGODB_DBNAME, WORKERS
 
-class BaseTest(AsyncHTTPTestCase):
 
+class BaseTest(AsyncHTTPTestCase):
     @classmethod
     def setUpClass(self):
+        ## initialisations required for tests to work even if the app has never run
+        ## as they will create keyring entries for AES_KEY, HMAC_KEY, and PEPPER
+        initialise_aes_key()
+        initialise_hmac_key()
+        initialise_pepper()
+
         self.my_app.db = AsyncMongoMockClient()[MONGODB_DBNAME]
 
         self.my_app.executor = ThreadPoolExecutor(WORKERS)
