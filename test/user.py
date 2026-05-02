@@ -1,3 +1,4 @@
+import os
 from json import dumps
 
 from tornado.escape import json_decode
@@ -6,6 +7,14 @@ from tornado.ioloop import IOLoop
 from tornado.web import Application
 
 from api.handlers.user import UserHandler
+from cryptographic_operations.passphrase_operations import (
+    SCRYPT_DERIVATION_PARAMS,
+    passphrase_hashing,
+)
+from cryptographic_operations.personal_details_operations import (
+    encrypt_plaintext,
+    keyed_hashing,
+)
 from cryptographic_operations.token_operations import sha256_string_hashing
 
 from .base import BaseTest
@@ -18,17 +27,23 @@ class UserHandlerTest(BaseTest):
         super().setUpClass()
 
     async def register(self):
+        self.salt = os.urandom(32)
+        self.hashed_pwd = passphrase_hashing(
+            self.password, self.salt, SCRYPT_DERIVATION_PARAMS
+        )
         await self.get_app().db.users.insert_one(
             {
-                "email": self.email,
-                "password": self.password,
-                "displayName": self.display_name,
+                "email": encrypt_plaintext(self.email).hex(),
+                "key_hashed_email": keyed_hashing(self.email),
+                "displayName": encrypt_plaintext("testDisplayName").hex(),
+                "password": self.hashed_pwd,
+                "salt": self.salt.hex(),
             }
         )
 
     async def login(self):
         await self.get_app().db.users.update_one(
-            {"email": self.email},
+            {"key_hashed_email": keyed_hashing(self.email)},
             {
                 "$set": {
                     "token": sha256_string_hashing(self.token),
