@@ -31,9 +31,9 @@ class RegistrationHandler(BaseHandler):
             )
 
             display_name = body.get("displayName")
-            encrypted_display_name: str = encrypt_plaintext(display_name).hex()
             if display_name is None:
                 display_name = email
+            encrypted_display_name: str = encrypt_plaintext(display_name).hex()
             if not isinstance(display_name, str):
                 raise Exception("Display name must be a string")
         except Exception:
