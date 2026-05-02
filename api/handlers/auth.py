@@ -22,7 +22,6 @@ class AuthHandler(BaseHandler):
             return
 
         hashed_token: str = sha256_string_hashing(token)
-        print(hashed_token)
         user = await self.db.users.find_one(
             {"token": hashed_token}, {"email": 1, "displayName": 1, "expiresIn": 1}
         )
