@@ -1,3 +1,5 @@
+import os
+
 import keyring
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
@@ -14,6 +16,12 @@ SCRYPT_DERIVATION_PARAMS: dict[str, int] = {"length": 32, "N": 2**14, "r": 8, "p
 PEPPER: str = keyring.get_password("cyberstudents", "pepper")  # type: ignore
 
 
+def initialise_pepper() -> None:
+    if keyring.get_password("cyberstudents", "pepper") is None:
+        pepper: str = os.urandom(32).hex()
+        keyring.set_password("cyberstudents", "pepper", pepper)
+
+
 def passphrase_hashing(
     passphrase: str, salt: bytes, derivation_params: dict[str, int]
 ) -> str:
@@ -25,7 +33,7 @@ def passphrase_hashing(
         p=derivation_params["p"],
     )
     derived_passphrase: bytes = key_derivation_function.derive(
-        passphrase.encode() + PEPPER.encode()
+        passphrase.encode() + bytes.fromhex(PEPPER)
     )
     return derived_passphrase.hex()
 
@@ -46,7 +54,7 @@ def passphrase_verification(
 
     try:
         key_derivation_function.verify(
-            password.encode() + PEPPER.encode(), bytes.fromhex(hashed_passphrase)
+            password.encode() + bytes.fromhex(PEPPER), bytes.fromhex(hashed_passphrase)
         )
         return True
     except InvalidKey:
