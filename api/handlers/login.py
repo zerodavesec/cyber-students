@@ -7,6 +7,7 @@ from cryptographic_operations.passphrase_operations import (
     SCRYPT_DERIVATION_PARAMS,
     passphrase_verification,
 )
+from cryptographic_operations.personal_details_operations import keyed_hashing
 from cryptographic_operations.token_operations import sha256_string_hashing
 
 from .base import BaseHandler
@@ -40,7 +41,11 @@ class LoginHandler(BaseHandler):
             "expiresIn": expires_in,
         }
 
-        await self.db.users.update_one({"email": email}, {"$set": hashed_token})
+        hmac_email: str = keyed_hashing(email)
+
+        await self.db.users.update_one(
+            {"key_hashed_email": hmac_email}, {"$set": hashed_token}
+        )
 
         return token
 
@@ -63,9 +68,10 @@ class LoginHandler(BaseHandler):
             self.send_error(400, message="The password is invalid!")
             return
 
+        hmac_email: str = keyed_hashing(email)
         ## Addition to find salt as well in database.
         user = await self.db.users.find_one(
-            {"email": email}, {"password": 1, "salt": 1}
+            {"key_hashed_email": hmac_email}, {"password": 1, "salt": 1}
         )
 
         if user is None:
@@ -83,6 +89,8 @@ class LoginHandler(BaseHandler):
             self.send_error(403, message="The email address and password are invalid!")
             return
 
+        # Stays the same as .generate_token() will perform keyed hashing within itself
+        # so plaintext email is the input for the method.
         token = await self.generate_token(email)
 
         self.set_status(200)
