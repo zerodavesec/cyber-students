@@ -1,3 +1,5 @@
+import os
+
 import keyring
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
@@ -14,6 +16,12 @@ SCRYPT_DERIVATION_PARAMS: dict[str, int] = {"length": 32, "N": 2**14, "r": 8, "p
 PEPPER: str = keyring.get_password("cyberstudents", "pepper")  # type: ignore
 
 
+def initialise_pepper() -> None:
+    if keyring.get_password("cyberstudents", "pepper") is None:
+        pepper: str = os.urandom(32).hex()
+        keyring.set_password("cyberstudents", "pepper", pepper)
+
+
 def passphrase_hashing(
     passphrase: str, salt: bytes, derivation_params: dict[str, int]
 ) -> str:
@@ -25,6 +33,10 @@ def passphrase_hashing(
         p=derivation_params["p"],
     )
     derived_passphrase: bytes = key_derivation_function.derive(
+        # FIX: PEPPER.encode() to bytes.fromhex(PEPPER) -> MISTAKE
+        # the pepper is initialised and saved as a hex string in keyring
+        # when encoding with .encode(), 64 bytes of ASCII are passed to the derive function
+        # instead of the 32 original bytes.
         passphrase.encode() + PEPPER.encode()
     )
     return derived_passphrase.hex()

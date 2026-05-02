@@ -7,16 +7,11 @@ from tornado.ioloop import IOLoop
 
 from api.app import Application
 from api.conf import PORT
+from cryptographic_operations.passphrase_operations import initialise_pepper
 from cryptographic_operations.personal_details_operations import (
     initialise_aes_key,
     initialise_hmac_key,
 )
-
-
-def initialise_pepper() -> None:
-    if keyring.get_password("cyberstudents", "pepper") is None:
-        pepper: str = os.urandom(32).hex()
-        keyring.set_password("cyberstudents", "pepper", pepper)
 
 
 def main():
