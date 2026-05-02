@@ -10,6 +10,10 @@ from cryptographic_operations.passphrase_operations import (
     SCRYPT_DERIVATION_PARAMS,
     passphrase_hashing,
 )
+from cryptographic_operations.personal_details_operations import (
+    encrypt_plaintext,
+    keyed_hashing,
+)
 
 from .base import BaseTest
 
@@ -23,13 +27,16 @@ class LoginHandlerTest(BaseTest):
     # For tests to pass on login operations, the .register() method had to be updated
     # for the db to receive a hashed passphrase and a salt in hex.
     async def register(self):
-        salt = os.urandom(32)
-        hashed = passphrase_hashing(self.password, salt, SCRYPT_DERIVATION_PARAMS)
+        self.salt = os.urandom(32)
+        self.hashed_pwd = passphrase_hashing(
+            self.password, self.salt, SCRYPT_DERIVATION_PARAMS
+        )
         await self.get_app().db.users.insert_one(
             {
-                "email": self.email,
-                "password": hashed,
-                "salt": salt.hex(),
+                "key_hashed_email": keyed_hashing(self.email),
+                "email": encrypt_plaintext(self.email),
+                "password": self.hashed_pwd,
+                "salt": self.salt.hex(),
                 "displayName": "testDisplayName",
             }
         )
