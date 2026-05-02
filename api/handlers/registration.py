@@ -6,6 +6,10 @@ from cryptographic_operations.passphrase_operations import (
     SCRYPT_DERIVATION_PARAMS,
     passphrase_hashing,
 )
+from cryptographic_operations.personal_details_operations import (
+    encrypt_plaintext,
+    keyed_hashing,
+)
 
 from .base import BaseHandler
 
@@ -16,6 +20,9 @@ class RegistrationHandler(BaseHandler):
             body = json_decode(self.request.body)
             email = body["email"].lower().strip()
 
+            hmac_email: str = keyed_hashing(email)
+            encrypted_email: str = encrypt_plaintext(email).hex()
+
             salt = os.urandom(32)
             password = passphrase_hashing(
                 passphrase=body["password"],
@@ -23,9 +30,9 @@ class RegistrationHandler(BaseHandler):
                 derivation_params=SCRYPT_DERIVATION_PARAMS,
             )
 
-            display_name = body.get("displayName")
+            display_name = encrypt_plaintext(body.get("displayName")).hex()
             if display_name is None:
-                display_name = email
+                display_name = encrypted_email
             if not isinstance(display_name, str):
                 raise Exception("Display name must be a string")
         except Exception:
@@ -57,9 +64,10 @@ class RegistrationHandler(BaseHandler):
 
         await self.db.users.insert_one(
             {
-                "email": email,
-                "password": password,
+                "key_hashed_email": hmac_email,
+                "encrypted_email": encrypted_email,
                 "displayName": display_name,
+                "password": password,
                 "salt": salt.hex(),
             }
         )
