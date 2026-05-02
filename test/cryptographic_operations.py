@@ -8,6 +8,10 @@ from cryptographic_operations.passphrase_operations import (
     passphrase_hashing,
     passphrase_verification,
 )
+from cryptographic_operations.personal_details_operations import (
+    decrypt_cyphertext,
+    encrypt_plaintext,
+)
 from cryptographic_operations.token_operations import sha256_string_hashing
 
 
@@ -82,3 +86,36 @@ class CrytographicOperationsTesting(TestCase):
 
         self.assertNotEqual(salt_1, salt_2)
         self.assertNotEqual(hashed_passphrase_1, hashed_passphrase_2)
+
+    ## AES-CTR Tests
+    def test_encryption_then_decryption_to_same_plaintext(self):
+        email: str = "david@zerodave.com"
+
+        nonce_and_ciphertext: bytes = encrypt_plaintext(email)
+        plaintext: str = decrypt_cyphertext(nonce_and_ciphertext=nonce_and_ciphertext)
+
+        self.assertEqual(email, plaintext)
+
+    def test_encryption_creates_different_ciphertext_each_time(self):
+        email: str = "david@zerodave.com"
+
+        nonce_and_ciphertext: bytes = encrypt_plaintext(email)
+        encrypted_nonce: bytes = nonce_and_ciphertext[:16]
+        ciphertext: bytes = nonce_and_ciphertext[16:]
+
+        for i in range(1000):
+            second_encryption: bytes = encrypt_plaintext(email)
+            second_encrypted_nonce: bytes = second_encryption[:16]
+            second_ciphertext: bytes = second_encryption[16:]
+
+            self.assertNotEqual(second_encrypted_nonce, encrypted_nonce)
+            self.assertNotEqual(second_ciphertext, ciphertext)
+            self.assertNotEqual(nonce_and_ciphertext, second_encryption)
+
+    def test_ciphertext_and_plaintext_lenght_is_equal(self):
+        email: str = "david@zerodave.com"
+
+        nonce_and_ciphertext: bytes = encrypt_plaintext(email)
+        ciphertext: bytes = nonce_and_ciphertext[16:]
+
+        self.assertEqual(len(ciphertext), len(email.encode()))
