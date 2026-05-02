@@ -25,7 +25,7 @@ class AuthHandler(BaseHandler):
         hashed_token: str = sha256_string_hashing(token)
         user = await self.db.users.find_one(
             {"token": hashed_token},
-            {"encrypted_email": 1, "displayName": 1, "expiresIn": 1},
+            {"email": 1, "displayName": 1, "expiresIn": 1},
         )
 
         if user is None:
@@ -43,6 +43,6 @@ class AuthHandler(BaseHandler):
         # before printing. This data goes to user.py to be printed.
         # Decision is to decrypt it here instead of in user.py.
         self.current_user = {
-            "email": decrypt_cyphertext(bytes.fromhex(user["encrypted_email"])),
+            "email": decrypt_cyphertext(bytes.fromhex(user["email"])),
             "display_name": decrypt_cyphertext(bytes.fromhex(user["displayName"])),
         }

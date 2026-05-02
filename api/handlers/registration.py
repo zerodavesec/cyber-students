@@ -30,9 +30,10 @@ class RegistrationHandler(BaseHandler):
                 derivation_params=SCRYPT_DERIVATION_PARAMS,
             )
 
-            display_name = encrypt_plaintext(body.get("displayName")).hex()
+            display_name = body.get("displayName")
+            encrypted_display_name: str = encrypt_plaintext(display_name).hex()
             if display_name is None:
-                display_name = encrypted_email
+                display_name = email
             if not isinstance(display_name, str):
                 raise Exception("Display name must be a string")
         except Exception:
@@ -65,8 +66,8 @@ class RegistrationHandler(BaseHandler):
         await self.db.users.insert_one(
             {
                 "key_hashed_email": hmac_email,
-                "encrypted_email": encrypted_email,
-                "displayName": display_name,
+                "email": encrypted_email,
+                "displayName": encrypted_display_name,
                 "password": password,
                 "salt": salt.hex(),
             }
